@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OnTheTown — Every event in town, this week</title>
+<meta name="description" content="OnTheTown shows you every event happening this week and this weekend in any US city. Concerts, nightlife, food, comedy, sports, art — free on iPhone.">
+<meta property="og:title" content="OnTheTown — Every event in town, this week">
+<meta property="og:description" content="Type a city, see everything happening. Free on iPhone.">
+<meta property="og:image" content="img/icon.png">
+<link rel="icon" type="image/png" href="img/badge.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,700;1,800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --coral:#FF5C51; --coral-deep:#EF3B22; --ink:#171226; --navy:#1D1731;
+    --cream:#FBF4E8; --paper:#F8F8F6; --muted:#6E6879;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Poppins',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.6}
+  a{color:var(--coral-deep)}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+
+  /* hero */
+  .hero{background:linear-gradient(180deg,#1D1731 0%,#120E20 100%);color:var(--cream);padding:72px 0 88px;text-align:center;overflow:hidden}
+  .hero img.badge{width:190px;height:190px;margin-bottom:28px;filter:drop-shadow(0 12px 40px rgba(0,0,0,.45))}
+  .hero h1{font-size:clamp(34px,6vw,58px);font-weight:700;font-style:italic;letter-spacing:-.5px;line-height:1.12}
+  .hero h1 em{font-style:italic;color:var(--coral)}
+  .hero p.sub{margin:18px auto 0;max-width:560px;font-size:19px;color:#CDC7DA}
+  .cta-row{margin-top:36px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-block;padding:15px 30px;border-radius:14px;font-weight:600;text-decoration:none;font-size:17px;transition:transform .12s ease}
+  .btn:hover{transform:translateY(-2px)}
+  .btn-coral{background:var(--coral);color:#fff}
+  .btn-ghost{border:2px solid #453D5C;color:var(--cream)}
+  .pill{display:inline-block;margin-bottom:22px;padding:7px 16px;border-radius:999px;background:#2A2342;color:#FFB648;font-size:13px;font-weight:600;letter-spacing:.4px}
+
+  /* features */
+  .features{padding:84px 0}
+  .features h2, .biz h2{font-size:clamp(26px,4vw,38px);font-weight:700;text-align:center;margin-bottom:10px}
+  .features p.lead{color:var(--muted);text-align:center;max-width:620px;margin:0 auto 48px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px}
+  .card{background:#fff;border-radius:20px;padding:30px;border:1px solid #ECE9E4}
+  .card .dot{width:46px;height:46px;border-radius:14px;background:var(--coral);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
+  .card h3{font-size:19px;margin-bottom:8px}
+  .card p{color:var(--muted);font-size:15px}
+
+  /* business */
+  .biz{background:var(--navy);color:var(--cream);padding:84px 0;text-align:center}
+  .biz p{max-width:600px;margin:14px auto 0;color:#CDC7DA}
+  .biz .btn{margin-top:30px}
+
+  footer{padding:44px 0;text-align:center;color:var(--muted);font-size:14px}
+  footer a{color:var(--muted);margin:0 10px}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="wrap">
+    <img class="badge" src="img/badge.png" alt="OnTheTown logo">
+    <div><span class="pill">NOW IN BETA · FREE ON IPHONE</span></div>
+    <h1>Every event in town.<br><em>This week. This weekend.</em></h1>
+    <p class="sub">Landing somewhere new, or looking for plans tonight? Type any US city and see everything happening — concerts, nightlife, food, comedy, sports, art, and more.</p>
+    <div class="cta-row">
+      <a class="btn btn-coral" href="https://testflight.apple.com/join/PSJvN3EN">Join the free beta</a>
+      <a class="btn btn-ghost" href="mailto:justin.47hirsch@gmail.com?subject=OnTheTown">Contact us</a>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="wrap">
+    <h2>The whole town's calendar, in your pocket</h2>
+    <p class="lead">OnTheTown pulls together events from ticketing platforms, venues, and local businesses across the country — refreshed automatically every week.</p>
+    <div class="grid">
+      <div class="card"><div class="dot">📍</div><h3>Any US city</h3><p>Nearly 100 markets and growing — major metros, mid-size cities, and college towns. Type a city or zip, or just use your location.</p></div>
+      <div class="card"><div class="dot">🗓️</div><h3>This week &amp; this weekend</h3><p>Two taps to answer the only question that matters: what's happening while I'm here?</p></div>
+      <div class="card"><div class="dot">🎸</div><h3>Every kind of event</h3><p>Music, nightlife, food &amp; drink, comedy, sports, art, family, markets, outdoors, and community happenings.</p></div>
+      <div class="card"><div class="dot">🔎</div><h3>Filter &amp; save</h3><p>Filter by category, date, price, and distance. Save events you're eyeing and build your night out.</p></div>
+      <div class="card"><div class="dot">🗺️</div><h3>List &amp; map views</h3><p>Browse the feed or flip to the map to see what's happening around you.</p></div>
+      <div class="card"><div class="dot">🎟️</div><h3>Tickets in one tap</h3><p>Jump straight to the official ticket page — no screenshots, no digging.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="biz" id="business">
+  <div class="wrap">
+    <h2>Run a venue or host events?</h2>
+    <p>Get your events in front of locals and travelers looking for plans. Submit a listing free from the app's Business section — and ask us about promoted placement to reach the top of the feed.</p>
+    <a class="btn btn-coral" href="mailto:justin.47hirsch@gmail.com?subject=OnTheTown%20Business%20Listing">Get in touch</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>© 2026 JH Enterprises LLC · OnTheTown</p>
+    <p style="margin-top:8px">
+      <a href="privacy.html">Privacy Policy</a> ·
+      <a href="support.html">Support</a> ·
+      <a href="mailto:justin.47hirsch@gmail.com">Contact</a>
+    </p>
+    <p style="margin-top:12px;font-size:12px;max-width:640px;margin-left:auto;margin-right:auto">Some ticket links are affiliate links — if you buy tickets through them, OnTheTown may earn a commission at no extra cost to you. Event information is provided by third-party sources and venues; details can change, so always confirm with the official ticket or venue page.</p>
+  </div>
+</footer>
+
+</body>
+</html>
