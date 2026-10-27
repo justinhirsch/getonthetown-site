@@ -68,6 +68,25 @@
   .pill.promote{background:var(--navy);color:#fff;text-decoration:none}
   .pill.featured{background:#FFF1CF;color:#7A5600}
   .acts{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .pill.edit{background:var(--cream);color:var(--ink)}
+
+  .claim{background:var(--cream);border-radius:12px;padding:15px 17px;margin:0 0 18px;font-size:14.5px}
+  .claim b{display:block;margin-bottom:3px}
+  .claim button{margin-top:11px;padding:9px 15px;font-size:14px}
+  .claim .fields{margin-top:12px}
+  .claim input,.claim textarea{width:100%;padding:10px 12px;border:1px solid var(--line);
+    border-radius:9px;font:inherit;font-size:14.5px;background:#fff;color:var(--ink)}
+  .claim textarea{min-height:62px;resize:vertical}
+  .claim label{margin:10px 0 4px}
+
+  .edit-form{margin-top:9px;display:grid;gap:7px}
+  .edit-form input,.edit-form textarea{width:100%;padding:9px 11px;border:1px solid var(--line);
+    border-radius:9px;font:inherit;font-size:14.5px;background:#fff;color:var(--ink)}
+  .edit-form textarea{min-height:58px;resize:vertical}
+  .edit-form .btns{display:flex;gap:7px}
+  .edit-form button{padding:8px 14px;font-size:14px}
+  .edit-form button.cancel{background:transparent;color:var(--muted);padding:8px 4px}
+  .tz{font-size:12px;color:var(--muted)}
 
   footer{padding:26px 0 46px;color:var(--muted);font-size:13.5px;border-top:1px solid var(--line)}
   .sep{color:var(--line);margin:0 4px}
@@ -113,6 +132,7 @@
 <section id="s-dash" class="hide">
   <div class="wrap">
     <div class="summary" id="sum"></div>
+    <div class="claim hide" id="claimbox"></div>
     <ul class="ev" id="events"></ul>
     <div class="msg" id="m-dash"></div>
   </div>
@@ -170,6 +190,7 @@ const store = {
 
 let session = null;   // { access_token, refresh_token, email }
 let venue = null;     // { id, name, address }
+let claim = null;     // this user's claim on `venue`, if any
 
 // ---------------------------------------------------------------- auth
 
@@ -271,13 +292,17 @@ async function openDash() {
   say('m-dash', '', '');
 
   const now = new Date().toISOString();
-  const [evR, mineR] = await Promise.all([
-    db(`events?select=id,title,start_at,images,featured&venue_id=eq.${venue.id}&status=eq.active`
+  const [evR, mineR, claimR] = await Promise.all([
+    db(`events?select=id,title,description,start_at,images,featured&venue_id=eq.${venue.id}&status=eq.active`
        + `&start_at=gte.${now}&order=start_at&limit=200`),
     db('event_image_submissions?select=event_id,status'),
+    // RLS already limits this to the signed-in user's own claims.
+    db(`venue_claims?select=id,status&venue_id=eq.${venue.id}&limit=1`),
   ]);
   const events = evR.ok ? await evR.json() : [];
   const mine = new Map(((mineR.ok ? await mineR.json() : []) || []).map((s) => [s.event_id, s.status]));
+  claim = claimR.ok ? ((await claimR.json())[0] ?? null) : null;
+  renderClaimBox();
 
   const has = (e) => Array.isArray(e.images) && e.images.length > 0;
   const missing = events.filter((e) => !has(e)).length;
@@ -295,6 +320,146 @@ async function openDash() {
 
   $('events').innerHTML = '';
   for (const e of events) $('events').append(row(e, has(e), mine.get(e.id)));
+
+}
+
+/** True once a human has agreed this person runs this venue (migration 015). */
+const canEdit = () => claim?.status === 'approved';
+
+function renderClaimBox() {
+  const box = $('claimbox');
+  box.classList.remove('hide');
+  box.innerHTML = '';
+
+  if (canEdit()) {
+    box.innerHTML = '<b>You look after this venue.</b>'
+      + 'You can fix the title, description and start time on any event below.'
+      + ' Corrections stick \u2014 the next time we re-read the source it will not'
+      + ' overwrite them.';
+    return;
+  }
+  if (claim?.status === 'pending') {
+    box.innerHTML = '<b>Claim sent.</b>We check these by hand, usually the same day.'
+      + ' Once it clears you can correct times and titles yourself.';
+    return;
+  }
+  if (claim?.status === 'rejected') {
+    box.innerHTML = '<b>We could not confirm that one.</b>'
+      + ' Email <a href="mailto:support@getonthetown.com">support@getonthetown.com</a>'
+      + ' and we will sort it out.';
+    return;
+  }
+
+  const b = document.createElement('b');
+  b.textContent = 'Run this venue?';
+  const p = document.createElement('span');
+  p.textContent = 'Claim it and you can fix a wrong start time or a mangled title'
+    + ' yourself, instead of emailing us. We check claims by hand.';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = 'Claim this venue';
+  btn.onclick = () => claimForm(box);
+  box.append(b, p, btn);
+}
+
+function claimForm(box) {
+  box.innerHTML = '';
+  const b = document.createElement('b');
+  b.textContent = `Claim ${venue.name}`;
+  const wrap = document.createElement('div');
+  wrap.className = 'fields';
+  wrap.innerHTML = '<label for="c-role">YOUR ROLE THERE</label>'
+    + '<input id="c-role" placeholder="Owner, manager, books the bands...">'
+    + '<label for="c-note">ANYTHING THAT HELPS US CHECK</label>'
+    + '<textarea id="c-note" placeholder="A number to reach you on, or where to find you on the venue\u2019s site."></textarea>';
+  const send = document.createElement('button');
+  send.type = 'button';
+  send.textContent = 'Send claim';
+  send.onclick = async () => {
+    send.disabled = true;
+    const r = await db('venue_claims', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        venue_id: venue.id,
+        user_id: session.user_id,
+        email: session.email,
+        role_at_venue: $('c-role').value.trim() || null,
+        note: $('c-note').value.trim() || null,
+        // status is omitted on purpose: the insert policy only accepts
+        // 'pending', and the column defaults to it.
+      }),
+    });
+    if (r.ok) { claim = { status: 'pending' }; renderClaimBox(); }
+    else { send.disabled = false; say('m-dash', `Could not send that (${r.status}). Email us instead.`, 'err'); }
+  };
+  box.append(b, wrap, send);
+}
+
+// The datetime-local input works in the BROWSER's timezone, which for a venue
+// editing their own calendar is their own. Labelled explicitly so somebody
+// doing this from a different timezone can see what they are setting.
+const BROWSER_TZ = (() => {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return 'local time'; }
+})();
+
+const toLocalInput = (iso) => {
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    + `T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+function editForm(e, li) {
+  const form = document.createElement('div');
+  form.className = 'edit-form';
+  const title = document.createElement('input');
+  title.value = e.title ?? '';
+  const desc = document.createElement('textarea');
+  desc.value = e.description ?? '';
+  desc.placeholder = 'Description';
+  const when = document.createElement('input');
+  when.type = 'datetime-local';
+  when.value = toLocalInput(e.start_at);
+  const tz = document.createElement('div');
+  tz.className = 'tz';
+  tz.textContent = `Times are in ${BROWSER_TZ}`;
+
+  const btns = document.createElement('div');
+  btns.className = 'btns';
+  const save = document.createElement('button');
+  save.type = 'button';
+  save.textContent = 'Save';
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.className = 'cancel';
+  cancel.textContent = 'Cancel';
+  cancel.onclick = () => openDash();
+  btns.append(save, cancel);
+
+  save.onclick = async () => {
+    save.disabled = true;
+    // Only send what actually changed. A null column in event_overrides means
+    // "no opinion", so an untouched field keeps following the source.
+    const body = { event_id: e.id, set_by: session.user_id, set_by_email: session.email };
+    if (title.value.trim() !== (e.title ?? '')) body.title = title.value.trim();
+    if (desc.value.trim() !== (e.description ?? '')) body.description = desc.value.trim();
+    const newIso = new Date(when.value).toISOString();
+    if (when.value && newIso !== new Date(e.start_at).toISOString()) body.start_at = newIso;
+
+    if (Object.keys(body).length === 3) { openDash(); return; }
+
+    const r = await db('event_overrides', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(body),
+    });
+    if (r.ok) { say('m-dash', 'Saved. That is what the app shows now.', 'ok'); openDash(); }
+    else { save.disabled = false; say('m-dash', `Could not save that (${r.status}).`, 'err'); }
+  };
+
+  form.append(title, desc, when, tz, btns);
+  li.querySelector('.meta').append(form);
 }
 
 function row(e, hasImage, submitted) {
@@ -331,6 +496,15 @@ function row(e, hasImage, submitted) {
     input.onchange = () => upload(e, input.files[0], lab);
     lab.append(input);
     act.append(lab);
+  }
+
+  if (canEdit()) {
+    const ed = document.createElement('button');
+    ed.className = 'pill edit';
+    ed.type = 'button';
+    ed.textContent = 'Edit';
+    ed.onclick = () => { ed.remove(); editForm(e, li); };
+    act.append(ed);
   }
 
   // Promotion is independent of the photo: a venue may well want to pay to
