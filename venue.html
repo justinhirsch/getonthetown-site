@@ -67,6 +67,7 @@
   .pill.done{background:var(--okbg);color:var(--ok)}
 
   footer{padding:26px 0 46px;color:var(--muted);font-size:13.5px;border-top:1px solid var(--line)}
+  .sep{color:var(--line);margin:0 4px}
   .hide{display:none}
 </style>
 </head>
@@ -117,6 +118,10 @@
 <footer>
   <div class="wrap">
     <span id="who"></span>
+    <button class="ghost hide" id="b-switch" type="button">Switch venue</button>
+    <span class="sep hide" id="sep">&middot;</span>
+    <button class="ghost hide" id="b-signout" type="button">Sign out</button>
+    <br>
     Questions: <a href="mailto:support@getonthetown.com">support@getonthetown.com</a><br>
     <a href="/privacy.html">Privacy</a> &middot; <a href="/terms.html">Terms</a>
   </div>
@@ -327,7 +332,7 @@ async function upload(ev, file, lab) {
       method: 'POST',
       headers: {
         apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${session?.access_token ?? SUPABASE_ANON_KEY}`,
         'Content-Type': file.type || 'application/octet-stream',
       },
       body: file,
@@ -355,6 +360,46 @@ async function upload(ev, file, lab) {
     say('m-dash', `${err.message}. Email it to support@getonthetown.com and we'll put it on.`, 'err');
   }
 }
+
+// ------------------------------------------------------------- sign out
+
+/**
+ * Drop the session here AND at Supabase.
+ *
+ * Clearing localStorage alone would leave the refresh token valid for days,
+ * so anyone who later read it out of a shared machine's storage could mint
+ * fresh access tokens. The logout call revokes it server-side. It is
+ * best-effort: a failed revoke must not trap someone on a machine they are
+ * trying to sign out of, so the local clear happens either way.
+ */
+async function signOut() {
+  try {
+    await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+  } catch { /* revoke is best-effort; the local clear below is not */ }
+  store.del(SESSION_KEY);
+  store.del(VENUE_KEY);
+  location.href = '/venue.html';
+}
+
+/** Picked the wrong venue, or run more than one. Keeps you signed in. */
+function switchVenue() {
+  venue = null;
+  store.del(VENUE_KEY);
+  $('hhead').textContent = 'Your venue on OnTheTown';
+  $('hsub').textContent = 'Pick the venue you run.';
+  $('q').value = '';
+  $('hits').innerHTML = '';
+  show('s-pick');
+}
+
+$('b-signout').addEventListener('click', signOut);
+$('b-switch').addEventListener('click', switchVenue);
 
 // ----------------------------------------------------------------- boot
 
@@ -400,7 +445,10 @@ $('q').addEventListener('input', (e) => {
   session = { ...session, email: user.email, user_id: user.id };
   store.set(SESSION_KEY, session);
 
-  $('who').innerHTML = `Signed in as ${session.email}. `;
+  // textContent, not innerHTML: the address comes back from the auth server
+  // and is rendered straight into the page.
+  $('who').textContent = `Signed in as ${session.email} `;
+  for (const id of ['b-switch', 'sep', 'b-signout']) $(id).classList.remove('hide');
   venue = store.get(VENUE_KEY);
   if (venue) openDash(); else show('s-pick');
 })();
