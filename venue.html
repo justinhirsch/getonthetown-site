@@ -72,6 +72,7 @@
 
   .claim{background:var(--cream);border-radius:12px;padding:15px 17px;margin:0 0 18px;font-size:14.5px}
   .claim b{display:block;margin-bottom:3px}
+  .claim > span{display:block}
   .claim button{margin-top:11px;padding:9px 15px;font-size:14px}
   .claim .fields{margin-top:12px}
   .claim input,.claim textarea{width:100%;padding:10px 12px;border:1px solid var(--line);
@@ -454,8 +455,15 @@ function editForm(e, li) {
       headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
       body: JSON.stringify(body),
     });
-    if (r.ok) { say('m-dash', 'Saved. That is what the app shows now.', 'ok'); openDash(); }
-    else { save.disabled = false; say('m-dash', `Could not save that (${r.status}).`, 'err'); }
+    if (r.ok) {
+      // openDash clears m-dash on entry, so the confirmation has to come after
+      // the reload or it is wiped before anyone sees it.
+      await openDash();
+      say('m-dash', 'Saved. That is what the app shows now.', 'ok');
+    } else {
+      save.disabled = false;
+      say('m-dash', `Could not save that (${r.status}).`, 'err');
+    }
   };
 
   form.append(title, desc, when, tz, btns);
