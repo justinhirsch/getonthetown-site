@@ -152,14 +152,14 @@ let venue = null;     // { id, name, address }
 // ---------------------------------------------------------------- auth
 
 async function sendMagicLink(email) {
-  const r = await fetch(`${SUPABASE_URL}/auth/v1/otp`, {
+  // GoTrue takes the redirect as a QUERY PARAMETER. options.email_redirect_to
+  // is a supabase-js convention and is silently ignored here -- the link would
+  // fall back to the project's Site URL instead.
+  const back = encodeURIComponent(`${location.origin}/venue.html`);
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/otp?redirect_to=${back}`, {
     method: 'POST',
     headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      email,
-      create_user: true,
-      options: { email_redirect_to: `${location.origin}/venue.html` },
-    }),
+    body: JSON.stringify({ email, create_user: true }),
   });
   if (!r.ok) throw new Error((await r.json().catch(() => ({}))).msg || `sign-in failed (${r.status})`);
 }
