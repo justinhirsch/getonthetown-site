@@ -106,9 +106,9 @@
     <h2>Everything else on this week is already in here</h2>
     <p class="lede">The bars, venues and promoters around you are listed. The only question is whether you are.</p>
     <ul class="stats">
-      <li><b>213</b><span>events listed across the Charleston area</span></li>
-      <li><b>73</b><span>of them happening in the next seven days</span></li>
-      <li><b>5,600+</b><span>venues nationwide, in 600&nbsp;towns</span></li>
+      <li><b id="n-area">200+</b><span>events listed across the Charleston area</span></li>
+      <li><b id="n-week">70+</b><span>of them happening in the next seven days</span></li>
+      <li><b>5,000+</b><span>venues across the country</span></li>
     </ul>
     <div class="shots">
       <figure>
@@ -281,6 +281,49 @@
 const SUPABASE_URL = 'https://xfdbgumedybwglgcfwze.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmZGJndW1lZHlid2dsZ2Nmd3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NTQ3NzIsImV4cCI6MjEwMTAzMDc3Mn0.v6UaGurp4R1qO5ogWDCNBd-uxiD4ePyldH2uUUhCFNE';
 const BUCKET = 'submission-images';
+
+// The two Charleston figures above are read live. They are the page's only
+// factual claim about size, and a hand-typed number is wrong within a week --
+// a venue who checks and finds it stale has every reason to doubt the rest.
+// The HTML ships conservative floors so the panel is never blank or wrong if
+// this fails.
+(async () => {
+  const AREA = [
+    'Charleston', 'Mount Pleasant', 'Isle of Palms', 'Summerville',
+    'Folly Beach', 'James Island', 'Johns Island', 'Daniel Island',
+  ];
+  const or = `or=(${AREA.map((c) => `venue->>address.ilike.*${c}*`).join(',')})`;
+  const now = new Date().toISOString();
+  const week = new Date(Date.now() + 7 * 864e5).toISOString();
+
+  // PostgREST returns the count in Content-Range when asked for zero rows.
+  const countOf = async (extra) => {
+    const url = `${SUPABASE_URL}/rest/v1/events?select=id&status=eq.active`
+      + `&start_at=gte.${now}${extra}&${or}`;
+    const r = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Prefer: 'count=exact',
+        Range: '0-0',
+      },
+    });
+    const n = Number((r.headers.get('content-range') || '').split('/')[1]);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+
+  try {
+    const [area, week7] = await Promise.all([
+      countOf(''),
+      countOf(`&start_at=lt.${week}`),
+    ]);
+    if (area) document.getElementById('n-area').textContent = area.toLocaleString();
+    if (week7) document.getElementById('n-week').textContent = week7.toLocaleString();
+  } catch {
+    // Leave the floors in the HTML. A stat panel is not worth a console error
+    // on a page whose actual job is the form below it.
+  }
+})();
 
 const f = document.getElementById('f');
 const go = document.getElementById('go');
