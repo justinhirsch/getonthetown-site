@@ -82,6 +82,9 @@
   .math b{color:#FFC9C2}
 
   @media(max-width:560px){
+    /* Paired fields stack on a phone. Side by side they are too narrow to type
+       in, and a label that wraps to two lines leaves the inputs misaligned. */
+    .row{display:block}
     .stats{grid-template-columns:1fr 1fr}
     .stats li:last-child{grid-column:1/-1}
     .shots figure{flex:1 1 0}
@@ -142,7 +145,7 @@
     <p class="lede">No account, no contract, nothing to install. Usually live the same day.</p>
     <ul class="how">
       <li><b>1</b><span>Send us the event below, and a photo if you have one. The photo is the part that matters — listings with a real picture get looked at far more than ones without.</span></li>
-      <li><b>2</b><span>We check the details and publish it. Usually same day.</span></li>
+      <li><b>2</b><span>We check the details and publish it.</span></li>
       <li><b>3</b><span>It appears for anyone browsing that city, on the list and on the map, with a link straight to your tickets or page.</span></li>
     </ul>
     <div class="note">
