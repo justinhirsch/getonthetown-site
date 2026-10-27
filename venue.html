@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your venue — OnTheTown</title>
+<meta name="description" content="Sign in to see your venue's events on OnTheTown and add photos to them.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/img/icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --coral-deep:#EF3B22; --coral:#FF5C51; --cream:#FBF4E8;
+    --ink:#171226; --muted:#6E6879; --navy:#1D1731; --paper:#F8F8F6;
+    --line:#E6E2DA; --ok:#14632C; --okbg:#E8F6EC;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Poppins',system-ui,sans-serif;color:var(--ink);background:var(--paper);line-height:1.55}
+  a{color:var(--coral-deep)}
+  .wrap{max-width:720px;margin:0 auto;padding:0 20px}
+
+  header{background:var(--coral-deep);color:#fff;padding:34px 0 30px}
+  header h1{margin:0;font-size:clamp(24px,5vw,34px);line-height:1.1;font-weight:800;letter-spacing:-.7px}
+  header p{margin:8px 0 0;opacity:.95;max-width:34em}
+  .home{display:inline-block;color:#fff;opacity:.85;text-decoration:none;font-size:14px;margin-bottom:16px}
+
+  section{padding:32px 0}
+  h2{font-size:21px;font-weight:800;margin:0 0 6px;letter-spacing:-.3px}
+  .lede{color:var(--muted);margin:0 0 20px}
+
+  label{display:block;font-size:12px;font-weight:700;letter-spacing:.8px;color:var(--muted);margin:14px 0 5px}
+  input[type=email],input[type=search]{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:10px;
+    font:inherit;font-size:15px;background:#fff;color:var(--ink)}
+  input:focus{outline:2px solid var(--coral);outline-offset:1px;border-color:transparent}
+
+  button{padding:13px 18px;border:0;border-radius:11px;background:var(--coral-deep);
+    color:#fff;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+  button:disabled{background:#CFCAC2;cursor:not-allowed}
+  button.wide{width:100%;margin-top:18px}
+  button.ghost{background:transparent;color:var(--coral-deep);padding:0;font-size:14px;font-weight:600;text-decoration:underline}
+
+  .msg{margin-top:16px;padding:13px 15px;border-radius:10px;font-size:14.5px;display:none}
+  .msg.ok{display:block;background:var(--okbg);color:var(--ok);border:1px solid #BFE3C9}
+  .msg.err{display:block;background:#FDECEA;color:#8C2214;border:1px solid #F4C7C0}
+
+  .hits{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:8px}
+  .hits li{border:1px solid var(--line);border-radius:12px;background:#fff}
+  .hits button{width:100%;text-align:left;background:transparent;color:var(--ink);padding:13px 15px;font-weight:600}
+  .hits small{display:block;color:var(--muted);font-weight:400;font-size:13px;margin-top:2px}
+
+  .summary{background:var(--navy);color:#fff;border-radius:14px;padding:18px 20px;margin:0 0 20px}
+  .summary b{color:#FFC9C2}
+
+  .ev{list-style:none;padding:0;margin:0;display:grid;gap:12px}
+  .ev li{display:flex;gap:13px;align-items:flex-start;border:1px solid var(--line);
+    border-radius:12px;padding:12px;background:#fff}
+  .thumb{flex:0 0 64px;height:64px;border-radius:9px;background:var(--cream);object-fit:cover;
+    display:grid;place-items:center;font-size:10.5px;color:var(--muted);text-align:center;line-height:1.25}
+  .ev .meta{flex:1;min-width:0}
+  .ev .when{color:var(--coral-deep);font-size:12.5px;font-weight:700}
+  .ev .title{font-weight:600;overflow-wrap:anywhere}
+  .ev .act{margin-top:7px}
+  .ev .act input{display:none}
+  .pill{display:inline-block;font-size:12.5px;font-weight:700;padding:5px 11px;border-radius:999px;
+    background:var(--coral-deep);color:#fff;cursor:pointer}
+  .pill.quiet{background:var(--cream);color:var(--muted)}
+  .pill.done{background:var(--okbg);color:var(--ok)}
+
+  footer{padding:26px 0 46px;color:var(--muted);font-size:13.5px;border-top:1px solid var(--line)}
+  .hide{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="home" href="/business.html">&larr; OnTheTown for venues</a>
+    <h1 id="hhead">Your venue on OnTheTown</h1>
+    <p id="hsub">Sign in to see the events we already list for you, and put your own photos on them.</p>
+  </div>
+</header>
+
+<!-- ------------------------------------------------------- 1. sign in -->
+<section id="s-signin" class="hide">
+  <div class="wrap">
+    <h2>Sign in</h2>
+    <p class="lede">No password. We email you a link that signs you straight in.</p>
+    <form id="f-signin">
+      <label for="email">YOUR EMAIL</label>
+      <input id="email" type="email" required placeholder="you@yourvenue.com" autocomplete="email">
+      <button class="wide" id="b-signin" type="submit">Email me a link</button>
+    </form>
+    <div class="msg" id="m-signin"></div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------- 2. pick venue -->
+<section id="s-pick" class="hide">
+  <div class="wrap">
+    <h2>Which venue are you?</h2>
+    <p class="lede">Start typing. These are the places we already have events for.</p>
+    <input id="q" type="search" placeholder="The Windjammer" autocomplete="off">
+    <ul class="hits" id="hits"></ul>
+    <div class="msg" id="m-pick"></div>
+  </div>
+</section>
+
+<!-- ----------------------------------------------------- 3. dashboard -->
+<section id="s-dash" class="hide">
+  <div class="wrap">
+    <div class="summary" id="sum"></div>
+    <ul class="ev" id="events"></ul>
+    <div class="msg" id="m-dash"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span id="who"></span>
+    Questions: <a href="mailto:support@getonthetown.com">support@getonthetown.com</a><br>
+    <a href="/privacy.html">Privacy</a> &middot; <a href="/terms.html">Terms</a>
+  </div>
+</footer>
+
+<script>
+const SUPABASE_URL = 'https://xfdbgumedybwglgcfwze.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmZGJndW1lZHlid2dsZ2Nmd3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NTQ3NzIsImV4cCI6MjEwMTAzMDc3Mn0.v6UaGurp4R1qO5ogWDCNBd-uxiD4ePyldH2uUUhCFNE';
+const BUCKET = 'submission-images';
+
+// Raw fetch rather than supabase-js. The rest of this site has no build step
+// and no dependencies, and magic-link auth is three endpoints; pulling in a
+// 100 KB client to call them would be the odd choice here, not the safe one.
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => { for (const s of ['s-signin', 's-pick', 's-dash']) $(s).classList.toggle('hide', s !== id); };
+const say = (el, text, cls) => { const n = $(el); n.textContent = text; n.className = `msg ${cls}`; };
+
+const SESSION_KEY = 'ott.session';
+const VENUE_KEY = 'ott.venue';
+
+// localStorage throws in a private window; a venue who cannot be remembered
+// should still be able to sign in and upload, just not stay signed in.
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+
+let session = null;   // { access_token, refresh_token, email }
+let venue = null;     // { id, name, address }
+
+// ---------------------------------------------------------------- auth
+
+async function sendMagicLink(email) {
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/otp`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email,
+      create_user: true,
+      options: { email_redirect_to: `${location.origin}/venue.html` },
+    }),
+  });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).msg || `sign-in failed (${r.status})`);
+}
+
+/** Supabase returns the session in the URL fragment, which never hits a server. */
+function readSessionFromHash() {
+  if (!location.hash.includes('access_token')) return null;
+  const p = new URLSearchParams(location.hash.slice(1));
+  const access_token = p.get('access_token');
+  if (!access_token) return null;
+  // Clear it so a shared or bookmarked URL does not carry a live token.
+  history.replaceState(null, '', location.pathname);
+  return { access_token, refresh_token: p.get('refresh_token') };
+}
+
+async function whoAmI(token) {
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` },
+  });
+  if (!r.ok) return null;
+  return r.json();
+}
+
+async function refresh() {
+  if (!session?.refresh_token) return false;
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: session.refresh_token }),
+  });
+  if (!r.ok) return false;
+  const j = await r.json();
+  session = { ...session, access_token: j.access_token, refresh_token: j.refresh_token };
+  store.set(SESSION_KEY, session);
+  return true;
+}
+
+/** PostgREST call as the signed-in user, retrying once across a token refresh. */
+async function db(path, init = {}, retried = false) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...init,
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${session?.access_token ?? SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+      ...(init.headers || {}),
+    },
+  });
+  if (r.status === 401 && !retried && (await refresh())) return db(path, init, true);
+  return r;
+}
+
+// -------------------------------------------------------------- venues
+
+async function searchVenues(q) {
+  const term = encodeURIComponent(`*${q.replace(/[*,()]/g, ' ')}*`);
+  const r = await db(`venues?select=id,name,address&name=ilike.${term}&order=name&limit=12`);
+  return r.ok ? r.json() : [];
+}
+
+function renderHits(rows) {
+  $('hits').innerHTML = '';
+  for (const v of rows) {
+    const li = document.createElement('li');
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.append(v.name);
+    const s = document.createElement('small');
+    s.textContent = v.address || '';
+    b.append(s);
+    b.onclick = () => { venue = v; store.set(VENUE_KEY, v); openDash(); };
+    li.append(b);
+    $('hits').append(li);
+  }
+}
+
+// ----------------------------------------------------------- dashboard
+
+const fmt = (iso) => new Date(iso).toLocaleString(undefined, {
+  weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+});
+
+async function openDash() {
+  show('s-dash');
+  $('hhead').textContent = venue.name;
+  $('hsub').textContent = venue.address || '';
+  say('m-dash', '', '');
+
+  const now = new Date().toISOString();
+  const [evR, mineR] = await Promise.all([
+    db(`events?select=id,title,start_at,images&venue_id=eq.${venue.id}&status=eq.active`
+       + `&start_at=gte.${now}&order=start_at&limit=200`),
+    db('event_image_submissions?select=event_id,status'),
+  ]);
+  const events = evR.ok ? await evR.json() : [];
+  const mine = new Map(((mineR.ok ? await mineR.json() : []) || []).map((s) => [s.event_id, s.status]));
+
+  const has = (e) => Array.isArray(e.images) && e.images.length > 0;
+  const missing = events.filter((e) => !has(e)).length;
+
+  $('sum').innerHTML = events.length
+    ? `You have <b>${events.length}</b> upcoming event${events.length === 1 ? '' : 's'} on OnTheTown.`
+      + (missing ? ` <b>${missing}</b> of them have no picture.` : ' Every one has a picture.')
+    : 'We have no upcoming events listed for this venue yet.';
+
+  // Pictureless first: that is the whole job of this page, and a venue with 38
+  // events should not have to hunt for the 37 that need something.
+  events.sort((a, b) => Number(has(a)) - Number(has(b)) || a.start_at.localeCompare(b.start_at));
+
+  $('events').innerHTML = '';
+  for (const e of events) $('events').append(row(e, has(e), mine.get(e.id)));
+}
+
+function row(e, hasImage, submitted) {
+  const li = document.createElement('li');
+
+  const thumb = document.createElement(hasImage ? 'img' : 'div');
+  thumb.className = 'thumb';
+  if (hasImage) { thumb.src = e.images[0].url || e.images[0]; thumb.alt = ''; thumb.loading = 'lazy'; }
+  else thumb.textContent = 'No picture';
+
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  const when = document.createElement('div');
+  when.className = 'when';
+  when.textContent = fmt(e.start_at);
+  const title = document.createElement('div');
+  title.className = 'title';
+  title.textContent = e.title;
+  meta.append(when, title);
+
+  const act = document.createElement('div');
+  act.className = 'act';
+  if (submitted === 'pending') {
+    act.innerHTML = '<span class="pill quiet">Photo sent, waiting on review</span>';
+  } else if (submitted === 'approved' || hasImage) {
+    act.innerHTML = '<span class="pill done">Has a picture</span>';
+  } else {
+    const lab = document.createElement('label');
+    lab.className = 'pill';
+    lab.textContent = 'Add a photo';
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/webp,image/heic';
+    input.onchange = () => upload(e, input.files[0], lab);
+    lab.append(input);
+    act.append(lab);
+  }
+
+  meta.append(act);
+  li.append(thumb, meta);
+  return li;
+}
+
+async function upload(ev, file, lab) {
+  if (!file) return;
+  if (file.size > 8 * 1024 * 1024) { say('m-dash', 'That photo is over 8 MB. Try a smaller one.', 'err'); return; }
+  lab.textContent = 'Uploading...';
+
+  try {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const path = `venue/${venue.id}/${ev.id}-${Date.now()}.${ext}`;
+
+    const up = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': file.type || 'application/octet-stream',
+      },
+      body: file,
+    });
+    if (!up.ok) throw new Error(`upload failed (${up.status})`);
+
+    const ins = await db('event_image_submissions', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        event_id: ev.id,
+        venue_id: venue.id,
+        image_url: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`,
+        submitted_by: session.user_id,
+        submitted_email: session.email,
+      }),
+    });
+    if (!ins.ok) throw new Error(`could not record it (${ins.status})`);
+
+    lab.replaceWith(Object.assign(document.createElement('span'),
+      { className: 'pill quiet', textContent: 'Photo sent, waiting on review' }));
+    say('m-dash', 'Got it. We check photos before they go live, usually the same day.', 'ok');
+  } catch (err) {
+    lab.textContent = 'Add a photo';
+    say('m-dash', `${err.message}. Email it to support@getonthetown.com and we'll put it on.`, 'err');
+  }
+}
+
+// ----------------------------------------------------------------- boot
+
+$('f-signin').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('b-signin').disabled = true;
+  try {
+    await sendMagicLink($('email').value.trim());
+    say('m-signin', 'Check your email. The link signs you in; it is good for one hour.', 'ok');
+  } catch (err) {
+    say('m-signin', err.message, 'err');
+    $('b-signin').disabled = false;
+  }
+});
+
+let typing;
+$('q').addEventListener('input', (e) => {
+  clearTimeout(typing);
+  const q = e.target.value.trim();
+  if (q.length < 2) { $('hits').innerHTML = ''; return; }
+  typing = setTimeout(async () => renderHits(await searchVenues(q)), 180);
+});
+
+(async () => {
+  const fromHash = readSessionFromHash();
+  session = fromHash ?? store.get(SESSION_KEY);
+
+  // An established user id is non-negotiable: RLS checks submitted_by against
+  // auth.uid(), so a session we cannot resolve to a user would let someone
+  // reach the dashboard and then fail on every upload. Better to ask them to
+  // sign in again.
+  let user = session?.access_token ? await whoAmI(session.access_token) : null;
+  if (!user && session?.refresh_token && await refresh()) {
+    user = await whoAmI(session.access_token);
+  }
+  if (!user?.id) {
+    store.del(SESSION_KEY);
+    session = null;
+    show('s-signin');
+    return;
+  }
+
+  session = { ...session, email: user.email, user_id: user.id };
+  store.set(SESSION_KEY, session);
+
+  $('who').innerHTML = `Signed in as ${session.email}. `;
+  venue = store.get(VENUE_KEY);
+  if (venue) openDash(); else show('s-pick');
+})();
+</script>
+</body>
+</html>
