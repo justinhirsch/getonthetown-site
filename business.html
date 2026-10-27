@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>List your events — OnTheTown</title>
+<meta name="description" content="Get your events in front of locals looking for plans. Send us the event and a photo, and it shows up for people browsing your city.">
+<meta property="og:title" content="List your events on OnTheTown">
+<meta property="og:description" content="Send us your event and a photo, and it shows up for locals looking for something to do.">
+<meta property="og:image" content="https://getonthetown.com/img/icon.png">
+<link rel="icon" href="/img/icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --coral-deep:#EF3B22; --coral:#FF5C51; --cream:#FBF4E8;
+    --ink:#171226; --muted:#6E6879; --navy:#1D1731; --paper:#F8F8F6;
+    --line:#E6E2DA;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Poppins',system-ui,sans-serif;color:var(--ink);background:var(--paper);line-height:1.55}
+  a{color:var(--coral-deep)}
+  .wrap{max-width:720px;margin:0 auto;padding:0 20px}
+
+  header{background:var(--coral-deep);color:#fff;padding:54px 0 44px}
+  header h1{margin:0 0 10px;font-size:clamp(30px,6vw,46px);line-height:1.06;font-weight:800;letter-spacing:-1px}
+  header p{margin:0;font-size:18px;opacity:.95;max-width:34em}
+  .home{display:inline-block;color:#fff;opacity:.85;text-decoration:none;font-size:14px;margin-bottom:22px}
+
+  section{padding:40px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:24px;font-weight:800;margin:0 0 6px;letter-spacing:-.4px}
+  .lede{color:var(--muted);margin:0 0 22px}
+
+  .how{display:grid;gap:14px;padding-left:0;list-style:none;margin:0}
+  .how li{display:flex;gap:13px;align-items:flex-start}
+  .how b{flex:0 0 26px;height:26px;border-radius:50%;background:var(--coral-deep);color:#fff;
+         display:grid;place-items:center;font-size:13px;font-weight:800}
+
+  label{display:block;font-size:12px;font-weight:700;letter-spacing:.8px;color:var(--muted);margin:16px 0 5px}
+  input,select,textarea{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:10px;
+         font:inherit;font-size:15px;background:#fff;color:var(--ink)}
+  textarea{min-height:88px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--coral);outline-offset:1px;border-color:transparent}
+  .row{display:flex;gap:12px}
+  .row>*{flex:1;min-width:0}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:5px}
+
+  button{margin-top:24px;width:100%;padding:15px;border:0;border-radius:11px;background:var(--coral-deep);
+         color:#fff;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+  button:disabled{background:#CFCAC2;cursor:not-allowed}
+
+  .msg{margin-top:16px;padding:13px 15px;border-radius:10px;font-size:14.5px;display:none}
+  .msg.ok{display:block;background:#E8F6EC;color:#14632C;border:1px solid #BFE3C9}
+  .msg.err{display:block;background:#FDECEA;color:#8C2214;border:1px solid #F4C7C0}
+
+  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:15px}
+  th,td{text-align:left;padding:11px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:12px;letter-spacing:.8px;color:var(--muted);font-weight:700}
+  td.price{white-space:nowrap;font-weight:700}
+  td.buy{text-align:right;white-space:nowrap}
+  .note{background:var(--cream);border-radius:12px;padding:16px 18px;margin-top:22px;font-size:14.5px}
+
+  footer{padding:30px 0 50px;color:var(--muted);font-size:13.5px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="home" href="/">&larr; OnTheTown</a>
+    <h1>Get your events in front of people looking for plans.</h1>
+    <p>OnTheTown shows people everything going on in their city this week and this weekend. Getting your events on it takes about two minutes.</p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="lede">No account, no contract, nothing to install.</p>
+    <ul class="how">
+      <li><b>1</b><span>Send us the event below, and a photo if you have one. The photo is the part that matters — listings with a real picture get looked at far more than ones without.</span></li>
+      <li><b>2</b><span>We check the details and publish it. Usually same day.</span></li>
+      <li><b>3</b><span>It appears for anyone browsing that city, on the list and on the map, with a link straight to your tickets or page.</span></li>
+    </ul>
+    <div class="note">
+      <strong>Why we ask you for the photo.</strong> We don't take pictures off venue websites &mdash; we don't have the rights to them. If you send one, we can use it. That's the only way your event shows up with your artwork instead of a plain tile.
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Send us an event</h2>
+    <p class="lede">Everything except the photo is required.</p>
+
+    <form id="f" novalidate>
+      <div class="row">
+        <div>
+          <label for="business_name">BUSINESS OR ORGANIZER</label>
+          <input id="business_name" name="business_name" required placeholder="The Windjammer" autocomplete="organization">
+        </div>
+        <div>
+          <label for="contact_email">CONTACT EMAIL</label>
+          <input id="contact_email" name="contact_email" type="email" required placeholder="you@business.com" autocomplete="email">
+        </div>
+      </div>
+
+      <label for="title">EVENT TITLE</label>
+      <input id="title" name="title" required placeholder="Live on the Deck: Summer Series">
+
+      <label for="description">DESCRIPTION</label>
+      <textarea id="description" name="description" placeholder="What should people know?"></textarea>
+
+      <div class="row">
+        <div>
+          <label for="venue_name">VENUE</label>
+          <input id="venue_name" name="venue_name" required placeholder="The Windjammer">
+        </div>
+        <div>
+          <label for="category">CATEGORY</label>
+          <select id="category" name="category" required>
+            <option value="music">Music</option>
+            <option value="food">Food &amp; drink</option>
+            <option value="comedy">Comedy</option>
+            <option value="sports">Sports</option>
+            <option value="markets">Markets</option>
+            <option value="family">Family</option>
+            <option value="art">Art</option>
+            <option value="nightlife">Nightlife</option>
+            <option value="outdoors">Outdoors</option>
+            <option value="shopping">Shopping</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="address">STREET ADDRESS, CITY, STATE</label>
+      <input id="address" name="address" required placeholder="1008 Ocean Blvd, Isle of Palms, SC">
+
+      <div class="row">
+        <div>
+          <label for="date">DATE</label>
+          <input id="date" name="date" type="date" required>
+        </div>
+        <div>
+          <label for="time">START TIME</label>
+          <input id="time" name="time" type="time" required>
+        </div>
+      </div>
+
+      <label for="ticket_url">TICKET OR EVENT LINK</label>
+      <input id="ticket_url" name="ticket_url" type="url" placeholder="https://">
+      <div class="hint">Where people should go to buy or find out more. Leave blank if there isn't one.</div>
+
+      <label for="image">PHOTO</label>
+      <input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/heic">
+      <div class="hint">JPG, PNG, WEBP or HEIC, up to 8&nbsp;MB. By sending it you're giving us permission to show it on your listing.</div>
+
+      <button id="go" type="submit">Send it in</button>
+      <div class="msg" id="msg"></div>
+    </form>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Want more than a listing?</h2>
+    <p class="lede">A standard listing puts you on the list and the map alongside everything else that night. These put you in front of people first.</p>
+    <table>
+      <tr><th>What</th><th>Price</th><th></th></tr>
+      <tr>
+        <td>Venue plan &mdash; everything you put on, listed as often as you run it</td>
+        <td class="price">$99/mo</td>
+        <td class="buy"><a href="https://buy.stripe.com/7sYeVd1midSp3Me2uIfYY01">Choose</a></td>
+      </tr>
+      <tr>
+        <td>Featured &mdash; badge and top placement within its day, in your city</td>
+        <td class="price">$25<br>$49/mo</td>
+        <td class="buy">
+          <a href="https://buy.stripe.com/7sYdR93uq3dL6Yq5GUfYY02">One event</a><br>
+          <a href="https://buy.stripe.com/bJeeVd3uq9C996y3yMfYY03">Monthly</a>
+        </td>
+      </tr>
+      <tr>
+        <td>City spotlight &mdash; top of the whole city feed for a week. One venue per city per week</td>
+        <td class="price">$149</td>
+        <td class="buy"><a href="https://buy.stripe.com/5kQ4gz2qm6pXdmO6KYfYY04">Choose</a></td>
+      </tr>
+      <tr>
+        <td>Single event listing &mdash; one event, no plan</td>
+        <td class="price">$35</td>
+        <td class="buy"><a href="https://buy.stripe.com/14A14nfd87u1ciKd9mfYY00">Choose</a></td>
+      </tr>
+    </table>
+    <div class="note">
+      Send the event in first either way &mdash; we'll reply and sort the rest out. Nothing is charged automatically, and you won't be chased if you never buy anything.
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Questions: <a href="mailto:support@getonthetown.com">support@getonthetown.com</a><br>
+    <a href="/privacy.html" style="color:inherit">Privacy</a> &middot; <a href="/terms.html" style="color:inherit">Terms</a><br>
+    &copy; 2026 JH Enterprises Limited Liability Company &middot; OnTheTown
+  </div>
+</footer>
+
+<script>
+const SUPABASE_URL = 'https://xfdbgumedybwglgcfwze.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmZGJndW1lZHlid2dsZ2Nmd3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NTQ3NzIsImV4cCI6MjEwMTAzMDc3Mn0.v6UaGurp4R1qO5ogWDCNBd-uxiD4ePyldH2uUUhCFNE';
+const BUCKET = 'submission-images';
+
+const f = document.getElementById('f');
+const go = document.getElementById('go');
+const msg = document.getElementById('msg');
+
+function show(kind, text) {
+  msg.className = 'msg ' + kind;
+  msg.textContent = text;
+}
+
+// The browser's own timezone is the venue's timezone in every realistic case:
+// the person filling this in is at, or works for, the place the event happens.
+// Sending a bare local string would have the server guess UTC and shift the
+// event by hours, which is the one error a what's-on app must never make.
+function localToISO(date, time) {
+  const d = new Date(`${date}T${time}`);
+  return isNaN(d) ? null : d.toISOString();
+}
+
+async function uploadImage(file) {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': file.type || 'application/octet-stream',
+      'x-upsert': 'false',
+    },
+    body: file,
+  });
+  if (!res.ok) throw new Error(`image upload failed (${res.status})`);
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+}
+
+f.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!f.checkValidity()) { f.reportValidity(); return; }
+
+  const start_at = localToISO(f.date.value, f.time.value);
+  if (!start_at) { show('err', 'That date and time did not parse. Please check them.'); return; }
+  if (new Date(start_at) < new Date()) {
+    show('err', 'That date has already passed — pick a future date and time.');
+    return;
+  }
+
+  go.disabled = true;
+  go.textContent = 'Sending…';
+  msg.className = 'msg';
+
+  try {
+    // Upload first. If the image fails the submission has not happened yet, so
+    // the person can fix it and retry without creating a duplicate listing.
+    let image_url = null;
+    const file = f.image.files[0];
+    if (file) {
+      if (file.size > 8 * 1024 * 1024) throw new Error('That photo is over 8 MB. Please send a smaller one.');
+      image_url = await uploadImage(file);
+    }
+
+    const row = {
+      business_name: f.business_name.value.trim(),
+      contact_email: f.contact_email.value.trim(),
+      title: f.title.value.trim(),
+      description: f.description.value.trim(),
+      venue_name: f.venue_name.value.trim(),
+      address: f.address.value.trim(),
+      category: f.category.value,
+      start_at,
+      ticket_url: f.ticket_url.value.trim() || null,
+      image_url,
+      listing_type: 'one_off',
+      promote_tier: 'none',
+      promote_requested: false,
+    };
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(row),
+    });
+    if (!res.ok) throw new Error(`submission failed (${res.status})`);
+
+    f.reset();
+    show('ok', "Got it — thanks. We'll check the details and publish it, usually the same day. We'll email you if anything needs clarifying.");
+  } catch (err) {
+    show('err', `${err.message} If it keeps happening, email support@getonthetown.com and we'll add it by hand.`);
+  } finally {
+    go.disabled = false;
+    go.textContent = 'Send it in';
+  }
+});
+</script>
+</body>
+</html>
