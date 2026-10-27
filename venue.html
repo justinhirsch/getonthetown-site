@@ -65,6 +65,9 @@
     background:var(--coral-deep);color:#fff;cursor:pointer}
   .pill.quiet{background:var(--cream);color:var(--muted)}
   .pill.done{background:var(--okbg);color:var(--ok)}
+  .pill.promote{background:var(--navy);color:#fff;text-decoration:none}
+  .pill.featured{background:#FFF1CF;color:#7A5600}
+  .acts{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
 
   footer{padding:26px 0 46px;color:var(--muted);font-size:13.5px;border-top:1px solid var(--line)}
   .sep{color:var(--line);margin:0 4px}
@@ -131,6 +134,20 @@
 const SUPABASE_URL = 'https://xfdbgumedybwglgcfwze.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmZGJndW1lZHlid2dsZ2Nmd3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NTQ3NzIsImV4cCI6MjEwMTAzMDc3Mn0.v6UaGurp4R1qO5ogWDCNBd-uxiD4ePyldH2uUUhCFNE';
 const BUCKET = 'submission-images';
+
+// Featured, one event, $25 (src/data/pricing.json -> promote.featured).
+//
+// client_reference_id is the whole point: Stripe echoes it back on the
+// checkout session, so a payment arrives already joined to an event instead
+// of being matched to a venue by hand from an email address. prefilled_email
+// does the same job for the venue, and saves them typing it.
+const PROMOTE_URL = 'https://buy.stripe.com/7sYdR93uq3dL6Yq5GUfYY02';
+
+function promoteLink(eventId, email) {
+  const q = new URLSearchParams({ client_reference_id: eventId });
+  if (email) q.set('prefilled_email', email);
+  return `${PROMOTE_URL}?${q}`;
+}
 
 // Raw fetch rather than supabase-js. The rest of this site has no build step
 // and no dependencies, and magic-link auth is three endpoints; pulling in a
@@ -255,7 +272,7 @@ async function openDash() {
 
   const now = new Date().toISOString();
   const [evR, mineR] = await Promise.all([
-    db(`events?select=id,title,start_at,images&venue_id=eq.${venue.id}&status=eq.active`
+    db(`events?select=id,title,start_at,images,featured&venue_id=eq.${venue.id}&status=eq.active`
        + `&start_at=gte.${now}&order=start_at&limit=200`),
     db('event_image_submissions?select=event_id,status'),
   ]);
@@ -268,6 +285,8 @@ async function openDash() {
   $('sum').innerHTML = events.length
     ? `You have <b>${events.length}</b> upcoming event${events.length === 1 ? '' : 's'} on OnTheTown.`
       + (missing ? ` <b>${missing}</b> of them have no picture.` : ' Every one has a picture.')
+      + '<br><span style="opacity:.75;font-size:14px">Photos are checked before they go live.'
+      + ' Promoting puts an event at the top of its day in your city.</span>'
     : 'We have no upcoming events listed for this venue yet.';
 
   // Pictureless first: that is the whole job of this page, and a venue with 38
@@ -297,7 +316,7 @@ function row(e, hasImage, submitted) {
   meta.append(when, title);
 
   const act = document.createElement('div');
-  act.className = 'act';
+  act.className = 'act acts';
   if (submitted === 'pending') {
     act.innerHTML = '<span class="pill quiet">Photo sent, waiting on review</span>';
   } else if (submitted === 'approved' || hasImage) {
@@ -312,6 +331,23 @@ function row(e, hasImage, submitted) {
     input.onchange = () => upload(e, input.files[0], lab);
     lab.append(input);
     act.append(lab);
+  }
+
+  // Promotion is independent of the photo: a venue may well want to pay to
+  // push an event that already has artwork.
+  if (e.featured) {
+    const badge = document.createElement('span');
+    badge.className = 'pill featured';
+    badge.textContent = 'Featured';
+    act.append(badge);
+  } else {
+    const buy = document.createElement('a');
+    buy.className = 'pill promote';
+    buy.textContent = 'Promote $25';
+    buy.href = promoteLink(e.id, session?.email);
+    buy.target = '_blank';
+    buy.rel = 'noopener';
+    act.append(buy);
   }
 
   meta.append(act);
