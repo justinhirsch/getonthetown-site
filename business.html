@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>List your events — OnTheTown</title>
-<meta name="description" content="Get your events in front of locals looking for plans. Send us the event and a photo, and it shows up for people browsing your city.">
+<title>List your events — OnTheTown for venues</title>
+<meta name="description" content="Reach the people deciding where to go tonight who don't follow you yet. Send us your event and a photo and it goes on the list and the map.">
 <meta property="og:title" content="List your events on OnTheTown">
-<meta property="og:description" content="Send us your event and a photo, and it shows up for locals looking for something to do.">
+<meta property="og:description" content="Your next regular is out tonight deciding where to go. Put your event where they’re looking.">
 <meta property="og:image" content="https://getonthetown.com/img/icon.png">
 <link rel="icon" href="/img/icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
@@ -55,9 +55,37 @@
   table{width:100%;border-collapse:collapse;margin-top:6px;font-size:15px}
   th,td{text-align:left;padding:11px 0;border-bottom:1px solid var(--line);vertical-align:top}
   th{font-size:12px;letter-spacing:.8px;color:var(--muted);font-weight:700}
-  td.price{white-space:nowrap;font-weight:700}
-  td.buy{text-align:right;white-space:nowrap}
+  td.price{white-space:nowrap;font-weight:700;padding-left:14px}
+  td.buy{text-align:right;white-space:nowrap;padding-left:12px}
   .note{background:var(--cream);border-radius:12px;padding:16px 18px;margin-top:22px;font-size:14.5px}
+
+  .cta{display:inline-block;margin-top:24px;padding:14px 26px;border-radius:11px;background:#fff;
+       color:var(--coral-deep);font-weight:700;text-decoration:none;font-size:16px}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 26px;padding:0;list-style:none}
+  .stats li{background:var(--cream);border-radius:12px;padding:15px 14px}
+  .stats b{display:block;font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1.1;color:var(--coral-deep)}
+  .stats span{font-size:12.5px;color:var(--muted);display:block;margin-top:3px}
+
+  .shots{display:flex;gap:16px;justify-content:center;margin-top:26px}
+  .shots figure{margin:0;flex:0 1 220px}
+  .shots img{width:100%;border-radius:16px;border:1px solid var(--line);display:block;background:#fff}
+  .shots figcaption{font-size:12.5px;color:var(--muted);margin-top:8px;text-align:center}
+
+  .vs{list-style:none;padding:0;margin:0;display:grid;gap:16px}
+  .vs li{padding-left:28px;position:relative}
+  .vs li::before{content:"";position:absolute;left:0;top:7px;width:13px;height:13px;border-radius:50%;
+                 border:3px solid var(--coral-deep)}
+  .vs b{display:block}
+
+  .math{background:var(--navy);color:#fff;border-radius:14px;padding:20px 22px;margin:0 0 22px;font-size:15px}
+  .math b{color:#FFC9C2}
+
+  @media(max-width:560px){
+    .stats{grid-template-columns:1fr 1fr}
+    .stats li:last-child{grid-column:1/-1}
+    .shots figure{flex:1 1 0}
+  }
 
   footer{padding:30px 0 50px;color:var(--muted);font-size:13.5px}
 </style>
@@ -67,15 +95,51 @@
 <header>
   <div class="wrap">
     <a class="home" href="/">&larr; OnTheTown</a>
-    <h1>Get your events in front of people looking for plans.</h1>
-    <p>OnTheTown shows people everything going on in their city this week and this weekend. Getting your events on it takes about two minutes.</p>
+    <h1>Your next regular is out tonight, deciding where to go.</h1>
+    <p>They don’t follow you yet, so your post never reaches them. OnTheTown does — it’s the app people open when they want to see everything on in town this week, all on one screen.</p>
+    <a class="cta" href="#send">Add your event &rarr;</a>
   </div>
 </header>
 
 <section>
   <div class="wrap">
+    <h2>Everything else on this week is already in here</h2>
+    <p class="lede">The bars, venues and promoters around you are listed. The only question is whether you are.</p>
+    <ul class="stats">
+      <li><b>213</b><span>events listed across the Charleston area</span></li>
+      <li><b>73</b><span>of them happening in the next seven days</span></li>
+      <li><b>5,600+</b><span>venues nationwide, in 600&nbsp;towns</span></li>
+    </ul>
+    <div class="shots">
+      <figure>
+        <img src="/img/app-list.jpg" alt="The OnTheTown list of events happening this weekend" loading="lazy" width="414" height="900">
+        <figcaption>The list people scroll on a Friday</figcaption>
+      </figure>
+      <figure>
+        <img src="/img/app-map.jpg" alt="The OnTheTown map, with a pin on each venue" loading="lazy" width="414" height="900">
+        <figcaption>And the map, pinned to your door</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>This isn’t a boosted post</h2>
+    <p class="lede">It reaches a different person entirely.</p>
+    <ul class="vs">
+      <li><b>Your followers already know you.</b> A post on your own page reaches the people who decided to follow you. The person worth winning is the one who typed “things to do in Charleston” and has never heard your name.</li>
+      <li><b>You appear where people are choosing.</b> Your event sits on the list for that night and as a pin on the map, next to everything else on at the same hour — not in a feed between a birthday and an ad.</li>
+      <li><b>The link goes straight to you.</b> Tickets, your site, your phone number, whatever you give us. We don’t sit between you and the sale, and we take no commission on a link you give us.</li>
+      <li><b>It stays up until the doors open.</b> A post is gone in a few hours. A listing is there every time somebody checks what’s on this week.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
     <h2>How it works</h2>
-    <p class="lede">No account, no contract, nothing to install.</p>
+    <p class="lede">No account, no contract, nothing to install. Usually live the same day.</p>
     <ul class="how">
       <li><b>1</b><span>Send us the event below, and a photo if you have one. The photo is the part that matters — listings with a real picture get looked at far more than ones without.</span></li>
       <li><b>2</b><span>We check the details and publish it. Usually same day.</span></li>
@@ -87,7 +151,7 @@
   </div>
 </section>
 
-<section>
+<section id="send">
   <div class="wrap">
     <h2>Send us an event</h2>
     <p class="lede">Everything except the photo is required.</p>
@@ -164,6 +228,12 @@
   <div class="wrap">
     <h2>Want more than a listing?</h2>
     <p class="lede">A standard listing puts you on the list and the map alongside everything else that night. These put you in front of people first.</p>
+    <div class="math">
+      If you run one thing a week, paying per event is <b>4.3 &times; $35 = about $150 a month</b>.
+      The venue plan is <b>$99</b> and covers everything you put on — trivia, the band, the monthly
+      market, all of it. Boosting a single post costs $20 to $100 and reaches people who already
+      follow you.
+    </div>
     <table>
       <tr><th>What</th><th>Price</th><th></th></tr>
       <tr>
@@ -192,6 +262,9 @@
     </table>
     <div class="note">
       Send the event in first either way &mdash; we'll reply and sort the rest out. Nothing is charged automatically, and you won't be chased if you never buy anything.
+      <br><br>
+      <strong>Already paying?</strong> <a href="https://billing.stripe.com/p/login/14A14nfd87u1ciKd9mfYY00">Manage your billing</a> &mdash;
+      invoices, card details, and cancelling, all self-serve. Enter the email you paid with and it sends you a link. No password to remember.
     </div>
   </div>
 </section>
