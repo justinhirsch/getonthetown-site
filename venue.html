@@ -145,6 +145,8 @@
     <button class="ghost hide" id="b-switch" type="button">Switch venue</button>
     <span class="sep hide" id="sep">&middot;</span>
     <button class="ghost hide" id="b-signout" type="button">Sign out</button>
+    <span class="sep hide" id="sep2">&middot;</span>
+    <a class="hide" id="b-billing" href="">Billing</a>
     <br>
     Questions: <a href="mailto:support@getonthetown.com">support@getonthetown.com</a><br>
     <a href="/privacy.html">Privacy</a> &middot; <a href="/terms.html">Terms</a>
@@ -163,6 +165,13 @@ const BUCKET = 'submission-images';
 // of being matched to a venue by hand from an email address. prefilled_email
 // does the same job for the venue, and saves them typing it.
 const PROMOTE_URL = 'https://buy.stripe.com/7sYdR93uq3dL6Yq5GUfYY02';
+
+// Unlimited listings for one business, $99/month (pricing.json -> listing.venue).
+const VENUE_PLAN_URL = 'https://buy.stripe.com/7sYeVd1midSp3Me2uIfYY01';
+
+// Stripe's own portal: invoices, card changes, cancelling. Email-link login,
+// so there is no second password to remember.
+const BILLING_URL = 'https://billing.stripe.com/p/login/14A14nfd87u1ciKd9mfYY00';
 
 function promoteLink(eventId, email) {
   const q = new URLSearchParams({ client_reference_id: eventId });
@@ -313,6 +322,15 @@ async function openDash() {
       + (missing ? ` <b>${missing}</b> of them have no picture.` : ' Every one has a picture.')
       + '<br><span style="opacity:.75;font-size:14px">Photos are checked before they go live.'
       + ' Promoting puts an event at the top of its day in your city.</span>'
+      // Only when it is genuinely cheaper. Four events promoted singly is
+      // $100, which is already past the monthly plan -- below that the plan
+      // would be the worse deal and suggesting it would be a sales pitch
+      // rather than advice.
+      + (events.length >= 4
+        ? `<br><span style="opacity:.75;font-size:14px">Promoting ${events.length} events`
+          + ` singly is $${events.length * 25}. The venue plan is `
+          + `<a href="${VENUE_PLAN_URL}" style="color:#FFC9C2">$99 a month</a> for everything you put on.</span>`
+        : '')
     : 'We have no upcoming events listed for this venue yet.';
 
   // Pictureless first: that is the whole job of this page, and a venue with 38
@@ -666,7 +684,8 @@ $('q').addEventListener('input', (e) => {
   // textContent, not innerHTML: the address comes back from the auth server
   // and is rendered straight into the page.
   $('who').textContent = `Signed in as ${session.email} `;
-  for (const id of ['b-switch', 'sep', 'b-signout']) $(id).classList.remove('hide');
+  $('b-billing').href = BILLING_URL;
+  for (const id of ['b-switch', 'sep', 'b-signout', 'sep2', 'b-billing']) $(id).classList.remove('hide');
   venue = store.get(VENUE_KEY);
   if (venue) openDash(); else show('s-pick');
 })();
