@@ -52,9 +52,12 @@
   .msg.ok{display:block;background:#E8F6EC;color:#14632C;border:1px solid #BFE3C9}
   .msg.err{display:block;background:#FDECEA;color:#8C2214;border:1px solid #F4C7C0}
 
-  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:15px}
+  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:15px;min-width:540px}
+  .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   th,td{text-align:left;padding:11px 0;border-bottom:1px solid var(--line);vertical-align:top}
   th{font-size:12px;letter-spacing:.8px;color:var(--muted);font-weight:700}
+  td.gets{font-size:14px;color:var(--muted);padding-left:14px;line-height:1.5}
+  td.gets b{color:var(--ink)}
   td.price{white-space:nowrap;font-weight:700;padding-left:14px}
   td.buy{text-align:right;white-space:nowrap;padding-left:12px}
   .note{background:var(--cream);border-radius:12px;padding:16px 18px;margin-top:22px;font-size:14.5px}
@@ -85,6 +88,25 @@
     .row{display:block}
     .stats{grid-template-columns:1fr 1fr}
     .stats li:last-child{grid-column:1/-1}
+
+    /* The pricing table becomes one card per tier. Four columns on a phone put
+       the price and the buy link off the right edge behind a scrollbar -- the
+       two things a venue actually came to read. Each row turns into a flex
+       block: name and description full width, then price and the buy link
+       share the last line, so the $25/"One event" and $49/"Monthly" pairs
+       still line up the way they do in the table. */
+    .tablewrap{overflow-x:visible}
+    table{min-width:0;display:block;margin-top:14px}
+    tbody{display:block}
+    tr{display:flex;flex-wrap:wrap;align-items:baseline;
+       padding:15px 0;border-bottom:1px solid var(--line)}
+    tr:first-child{display:none}            /* column headings */
+    tr:last-child{border-bottom:0}
+    td{display:block;border:0;padding:0}
+    td:first-child{width:100%;font-size:17px}
+    td.gets{width:100%;padding-left:0;margin-top:6px}
+    td.price{padding-left:0;margin-top:11px;font-size:17px}
+    td.buy{flex:1;text-align:right;padding-left:12px;margin-top:11px}
   }
 
   footer{padding:30px 0 50px;color:var(--muted);font-size:13.5px}
@@ -236,16 +258,21 @@
       market, all of it. Boosting a single post costs $20 to $100 and reaches people who already
       follow you.
     </div>
+    <div class="tablewrap">
     <table>
-      <tr><th>What</th><th>Price</th><th></th></tr>
+      <tr><th>What</th><th>What you get</th><th>Price</th><th></th></tr>
       <tr>
-        <td>Venue plan &mdash; everything you put on, listed as often as you run it</td>
+        <td><b>Venue plan</b></td>
+        <td class="gets">Everything you put on, listed as often as you run it &mdash; trivia every
+          Tuesday, the band on Friday, the one-off in March. Billed monthly, cancel any time.</td>
         <td class="price">$99/mo</td>
         <td class="buy"><a href="https://buy.stripe.com/7sYeVd1midSp3Me2uIfYY01">Choose</a></td>
       </tr>
       <tr>
-        <td>Featured &mdash; badge and top placement within its day, in your city.
-            Buy a single one from your own events list, so we know which event you mean.</td>
+        <td><b>Featured</b></td>
+        <td class="gets">A <b>Featured</b> badge on the listing, first place in its day, and priority
+          in the picks at the top of the city screen. Buy a single one from your own events list,
+          so we know which event you mean.</td>
         <td class="price">$25<br>$49/mo</td>
         <td class="buy">
           <a href="/venue.html">One event</a><br>
@@ -253,16 +280,25 @@
         </td>
       </tr>
       <tr>
-        <td>City spotlight &mdash; top of the whole city feed for a week. One venue per city per week</td>
+        <td><b>City spotlight</b></td>
+        <td class="gets">Above everything else in the city for a week, Featured events included,
+          with a <b>Spotlight</b> badge. One venue per city per week, so it is only ever you.</td>
         <td class="price">$149</td>
         <td class="buy"><a href="https://buy.stripe.com/5kQ4gz2qm6pXdmO6KYfYY04">Choose</a></td>
       </tr>
       <tr>
-        <td>Single event listing &mdash; one event, no plan</td>
+        <td><b>Single listing</b></td>
+        <td class="gets">One event, listed until it happens, on the list and on the map with a link
+          straight to your tickets. No plan, nothing recurring.</td>
         <td class="price">$35</td>
         <td class="buy"><a href="https://buy.stripe.com/14A14nfd87u1ciKd9mfYY00">Choose</a></td>
       </tr>
     </table>
+    </div>
+    <p class="lede" style="margin:14px 0 0;font-size:13.5px">
+      Getting listed at all is still something we do from your own events page, free. These are for
+      when you want an event to stand out from the other 60 on that night.
+    </p>
     <div class="note">
       Send the event in first either way &mdash; we'll reply and sort the rest out. Nothing is charged automatically, and you won't be chased if you never buy anything.
       <br><br>
