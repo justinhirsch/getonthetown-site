@@ -356,6 +356,20 @@ async function uploadImage(file) {
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
 }
 
+/**
+ * Fill the contact address from whatever was used last on this device.
+ *
+ * localStorage throws in a private window and can come back empty, so this is
+ * best-effort: an empty box is the normal state, not a failure.
+ */
+function rememberEmail() {
+  try {
+    const v = JSON.parse(localStorage.getItem('ott.email') ?? 'null');
+    if (v && !f.contact_email.value) f.contact_email.value = v;
+  } catch {}
+}
+rememberEmail();
+
 f.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!f.checkValidity()) { f.reportValidity(); return; }
@@ -409,7 +423,13 @@ f.addEventListener('submit', async (e) => {
     });
     if (!res.ok) throw new Error(`submission failed (${res.status})`);
 
+    // Shared with the dashboard at /venue.html, which asks for the same
+    // address when somebody sends a photo. A venue that does both should
+    // type it once.
+    try { localStorage.setItem('ott.email', JSON.stringify(f.contact_email.value.trim())); } catch {}
+
     f.reset();
+    rememberEmail();
     show('ok', "Got it — thanks. We'll check the details and publish it, usually the same day. We'll email you if anything needs clarifying.");
   } catch (err) {
     show('err', `${err.message} If it keeps happening, email support@getonthetown.com and we'll add it by hand.`);
