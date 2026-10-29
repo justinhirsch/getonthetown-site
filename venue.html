@@ -100,7 +100,7 @@
   <div class="wrap">
     <a class="home" href="/business.html">&larr; OnTheTown for venues</a>
     <h1 id="hhead">Your venue on OnTheTown</h1>
-    <p id="hsub">Sign in to see the events we already list for you, and put your own photos on them.</p>
+    <p id="hsub">Find your venue, see the events we already list, and put your own photos on them.</p>
   </div>
 </header>
 
@@ -122,7 +122,7 @@
 <section id="s-pick" class="hide">
   <div class="wrap">
     <h2>Which venue are you?</h2>
-    <p class="lede">Start typing. These are the places we already have events for.</p>
+    <p class="lede">Start typing. These are the places we already have events for. No account needed.</p>
     <input id="q" type="search" placeholder="The Windjammer" autocomplete="off">
     <ul class="hits" id="hits"></ul>
     <div class="msg" id="m-pick"></div>
@@ -297,6 +297,8 @@ const fmt = (iso) => new Date(iso).toLocaleString(undefined, {
 
 async function openDash() {
   show('s-dash');
+  // Only meaningful once there is a venue to switch away from.
+  $('b-switch').classList.remove('hide');
   $('hhead').textContent = venue.name;
   $('hsub').textContent = venue.address || '';
   say('m-dash', '', '');
@@ -372,12 +374,18 @@ function renderClaimBox() {
   const b = document.createElement('b');
   b.textContent = 'Run this venue?';
   const p = document.createElement('span');
-  p.textContent = 'Claim it and you can fix a wrong start time or a mangled title'
-    + ' yourself, instead of emailing us. We check claims by hand.';
+  p.textContent = session
+    ? 'Claim it and you can fix a wrong start time or a mangled title yourself,'
+      + ' instead of emailing us. We check claims by hand.'
+    : 'Adding photos needs no account. Claiming does \u2014 it lets you fix a wrong'
+      + ' start time or a mangled title yourself, and that goes live straight away,'
+      + ' so we check who you are first.';
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.textContent = 'Claim this venue';
-  btn.onclick = () => claimForm(box);
+  // Claiming is the one thing that needs an account, so this is where the
+  // sign-in is offered -- at the point it buys something, not on the way in.
+  btn.textContent = session ? 'Claim this venue' : 'Sign in to claim';
+  btn.onclick = () => (session ? claimForm(box) : show('s-signin'));
   box.append(b, p, btn);
 }
 
@@ -555,8 +563,48 @@ function row(e, hasImage, submitted) {
   return li;
 }
 
+// Remembered between uploads so a venue adding photos to six events types it
+// once. Asked for AFTER they have chosen a file, not before they can see
+// anything: by then they have already decided to send something.
+const EMAIL_KEY = 'ott.email';
+const senderEmail = () => store.get(EMAIL_KEY);
+
+function askEmail(lab, onHave) {
+  const row = document.createElement('div');
+  row.className = 'edit-form';
+  const input = document.createElement('input');
+  input.type = 'email';
+  input.placeholder = 'you@yourvenue.com';
+  const hint = document.createElement('div');
+  hint.className = 'tz';
+  hint.textContent = 'So we can tell you when it is live. Nothing else.';
+  const go = document.createElement('button');
+  go.type = 'button';
+  go.textContent = 'Send photo';
+  go.onclick = () => {
+    const v = input.value.trim();
+    if (!/.+@.+\..+/.test(v)) { input.focus(); hint.textContent = 'That does not look like an email address.'; return; }
+    store.set(EMAIL_KEY, v);
+    row.remove();
+    onHave();
+  };
+  const btns = document.createElement('div');
+  btns.className = 'btns';
+  btns.append(go);
+  row.append(input, hint, btns);
+  // Below the buttons, not inside them: .acts is a horizontal flex row and
+  // appending there squeezes the field down to nothing.
+  (lab.closest('.meta') ?? lab.parentElement).append(row);
+  input.focus();
+}
+
 async function upload(ev, file, lab) {
   if (!file) return;
+  if (!session && !senderEmail()) {
+    lab.textContent = 'Photo chosen';
+    askEmail(lab, () => upload(ev, file, lab));
+    return;
+  }
   if (file.size > 8 * 1024 * 1024) { say('m-dash', 'That photo is over 8 MB. Try a smaller one.', 'err'); return; }
   lab.textContent = 'Uploading...';
 
@@ -582,8 +630,10 @@ async function upload(ev, file, lab) {
         event_id: ev.id,
         venue_id: venue.id,
         image_url: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`,
-        submitted_by: session.user_id,
-        submitted_email: session.email,
+        // Null when nobody is signed in. Migration 019 accepts that, as long
+        // as there is an address to send the decision back to.
+        submitted_by: session?.user_id ?? null,
+        submitted_email: session?.email ?? senderEmail(),
       }),
     });
     if (!ins.ok) throw new Error(`could not record it (${ins.status})`);
@@ -626,9 +676,11 @@ async function signOut() {
 /** Picked the wrong venue, or run more than one. Keeps you signed in. */
 function switchVenue() {
   venue = null;
+  if (!session) $('b-switch').classList.add('hide');
   store.del(VENUE_KEY);
   $('hhead').textContent = 'Your venue on OnTheTown';
   $('hsub').textContent = 'Pick the venue you run.';
+  claim = null;
   $('q').value = '';
   $('hits').innerHTML = '';
   show('s-pick');
@@ -663,10 +715,16 @@ $('q').addEventListener('input', (e) => {
   const fromHash = readSessionFromHash();
   session = fromHash ?? store.get(SESSION_KEY);
 
-  // An established user id is non-negotiable: RLS checks submitted_by against
-  // auth.uid(), so a session we cannot resolve to a user would let someone
-  // reach the dashboard and then fail on every upload. Better to ask them to
-  // sign in again.
+  // NOBODY IS ASKED TO SIGN IN TO GET IN. Browsing your venue, sending a
+  // photo and promoting an event all work signed out, because none of them
+  // change the live app on their own -- a photo waits for review, a promotion
+  // waits for Stripe. Putting an email round trip in front of that cost us
+  // the thing it was protecting: 57% of the catalogue has no picture, and a
+  // venue who lands on a bare sign-in box does not come back.
+  //
+  // Signing in is an upgrade, offered where it is genuinely required:
+  // claiming the venue and editing an event, which go live with nobody in
+  // between.
   let user = session?.access_token ? await whoAmI(session.access_token) : null;
   if (!user && session?.refresh_token && await refresh()) {
     user = await whoAmI(session.access_token);
@@ -674,18 +732,18 @@ $('q').addEventListener('input', (e) => {
   if (!user?.id) {
     store.del(SESSION_KEY);
     session = null;
-    show('s-signin');
-    return;
+  } else {
+    session = { ...session, email: user.email, user_id: user.id };
+    store.set(SESSION_KEY, session);
   }
-
-  session = { ...session, email: user.email, user_id: user.id };
-  store.set(SESSION_KEY, session);
 
   // textContent, not innerHTML: the address comes back from the auth server
   // and is rendered straight into the page.
-  $('who').textContent = `Signed in as ${session.email} `;
-  $('b-billing').href = BILLING_URL;
-  for (const id of ['b-switch', 'sep', 'b-signout', 'sep2', 'b-billing']) $(id).classList.remove('hide');
+  if (session) {
+    $('who').textContent = `Signed in as ${session.email} `;
+    $('b-billing').href = BILLING_URL;
+    for (const id of ['b-switch', 'sep', 'b-signout', 'sep2', 'b-billing']) $(id).classList.remove('hide');
+  }
   venue = store.get(VENUE_KEY);
   if (venue) openDash(); else show('s-pick');
 })();
