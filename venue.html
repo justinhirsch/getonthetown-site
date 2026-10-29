@@ -267,10 +267,50 @@ async function db(path, init = {}, retried = false) {
 
 // -------------------------------------------------------------- venues
 
+/**
+ * Find a venue by its name, its address, or the title of one of its events.
+ *
+ * Name alone was too narrow. The results list shows each venue's address
+ * underneath, which quietly implies you can search by it -- so somebody typing
+ * their street or their city got nothing back and reasonably concluded they
+ * were not listed. Event titles are the same trap one step further out: a
+ * manager thinks in terms of their Tuesday trivia, not the venue's legal name.
+ *
+ * Name matches rank first so the ordinary case is unaffected.
+ */
 async function searchVenues(q) {
   const term = encodeURIComponent(`*${q.replace(/[*,()]/g, ' ')}*`);
-  const r = await db(`venues?select=id,name,address&name=ilike.${term}&order=name&limit=12`);
-  return r.ok ? r.json() : [];
+  const now = new Date().toISOString();
+
+  const [venueRes, eventRes] = await Promise.all([
+    db(`venues?select=id,name,address&or=(name.ilike.${term},address.ilike.${term})`
+       + '&order=name&limit=12'),
+    db(`events?select=title,venue_id&title=ilike.${term}&venue_id=not.is.null`
+       + `&status=eq.active&start_at=gte.${now}&limit=25`),
+  ]);
+
+  const direct = venueRes.ok ? await venueRes.json() : [];
+  const events = eventRes.ok ? await eventRes.json() : [];
+
+  // Which event got them here, so the row can say so rather than looking like
+  // an unexplained result.
+  const viaEvent = new Map();
+  for (const e of events) if (!viaEvent.has(e.venue_id)) viaEvent.set(e.venue_id, e.title);
+
+  const already = new Set(direct.map((v) => v.id));
+  const extraIds = [...viaEvent.keys()].filter((id) => !already.has(id)).slice(0, 8);
+  let viaEvents = [];
+  if (extraIds.length) {
+    const r = await db(`venues?select=id,name,address&id=in.(${extraIds.join(',')})`);
+    if (r.ok) viaEvents = await r.json();
+  }
+
+  const needle = q.toLowerCase();
+  const nameMatchFirst = (a, b) =>
+    Number(!a.name.toLowerCase().includes(needle)) - Number(!b.name.toLowerCase().includes(needle));
+
+  return [...direct.sort(nameMatchFirst), ...viaEvents]
+    .map((v) => ({ ...v, via: viaEvent.get(v.id) ?? null }));
 }
 
 function renderHits(rows) {
@@ -283,7 +323,17 @@ function renderHits(rows) {
     const s = document.createElement('small');
     s.textContent = v.address || '';
     b.append(s);
-    b.onclick = () => { venue = v; store.set(VENUE_KEY, v); openDash(); };
+    if (v.via) {
+      const why = document.createElement('small');
+      why.textContent = `matched \u201c${v.via}\u201d`;
+      b.append(why);
+    }
+    b.onclick = () => {
+      // `via` is about this search, not about the venue -- do not remember it.
+      venue = { id: v.id, name: v.name, address: v.address };
+      store.set(VENUE_KEY, venue);
+      openDash();
+    };
     li.append(b);
     $('hits').append(li);
   }
