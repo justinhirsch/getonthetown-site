@@ -166,17 +166,20 @@ const BUCKET = 'submission-images';
 // does the same job for the venue, and saves them typing it.
 const PROMOTE_URL = 'https://buy.stripe.com/7sYdR93uq3dL6Yq5GUfYY02';
 
-// Unlimited listings for one business, $99/month (pricing.json -> listing.venue).
-const VENUE_PLAN_URL = 'https://buy.stripe.com/7sYeVd1midSp3Me2uIfYY01';
+// City spotlight, $149 a week (pricing.json -> promote.spotlight). Bought the
+// same way as Featured and for the same reason: the checkout has to carry a
+// client_reference_id or the payment lands with no event attached and
+// backend/sync-stripe-promotions.mjs can only file it as an orphan.
+const SPOTLIGHT_URL = 'https://buy.stripe.com/5kQ4gz2qm6pXdmO6KYfYY04';
 
 // Stripe's own portal: invoices, card changes, cancelling. Email-link login,
 // so there is no second password to remember.
 const BILLING_URL = 'https://billing.stripe.com/p/login/14A14nfd87u1ciKd9mfYY00';
 
-function promoteLink(eventId, email) {
+function promoteLink(eventId, email, base = PROMOTE_URL) {
   const q = new URLSearchParams({ client_reference_id: eventId });
   if (email) q.set('prefilled_email', email);
-  return `${PROMOTE_URL}?${q}`;
+  return `${base}?${q}`;
 }
 
 // Raw fetch rather than supabase-js. The rest of this site has no build step
@@ -379,9 +382,8 @@ async function openDash() {
       // would be the worse deal and suggesting it would be a sales pitch
       // rather than advice.
       + (events.length >= 4
-        ? `<br><span style="opacity:.75;font-size:14px">Promoting ${events.length} events`
-          + ` singly is $${events.length * 25}. The venue plan is `
-          + `<a href="${VENUE_PLAN_URL}" style="color:#FFC9C2">$99 a month</a> for everything you put on.</span>`
+        ? `<br><span style="opacity:.75;font-size:14px">Running this many?`
+          + ` Email support@getonthetown.com and we'll work out one price for the lot.</span>`
         : '')
     : 'We have no upcoming events listed for this venue yet.';
 
@@ -594,18 +596,29 @@ function row(e, hasImage, submitted) {
   // Promotion is independent of the photo: a venue may well want to pay to
   // push an event that already has artwork.
   if (e.featured) {
+    // Show what was actually bought. Spotlight costs six times Featured, and
+    // labelling both "Featured" is how you get a venue asking what they paid
+    // for.
     const badge = document.createElement('span');
     badge.className = 'pill featured';
-    badge.textContent = 'Featured';
+    badge.textContent = e.featured.label === 'Spotlight' ? 'Spotlight' : 'Featured';
     act.append(badge);
   } else {
-    const buy = document.createElement('a');
-    buy.className = 'pill promote';
-    buy.textContent = 'Promote $25';
-    buy.href = promoteLink(e.id, session?.email);
-    buy.target = '_blank';
-    buy.rel = 'noopener';
-    act.append(buy);
+    // Both tiers are bought here rather than from the pricing table, because
+    // this is the only place that knows WHICH event is being promoted. A bare
+    // payment link carries no event id and the money arrives unattached.
+    for (const t of [
+      { label: 'Feature it &middot; $25', base: PROMOTE_URL },
+      { label: 'Spotlight &middot; $149', base: SPOTLIGHT_URL },
+    ]) {
+      const buy = document.createElement('a');
+      buy.className = 'pill promote';
+      buy.innerHTML = t.label;
+      buy.href = promoteLink(e.id, session?.email, t.base);
+      buy.target = '_blank';
+      buy.rel = 'noopener';
+      act.append(buy);
+    }
   }
 
   meta.append(act);
