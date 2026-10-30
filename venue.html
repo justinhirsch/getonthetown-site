@@ -172,9 +172,44 @@ const PROMOTE_URL = 'https://buy.stripe.com/7sYdR93uq3dL6Yq5GUfYY02';
 // backend/sync-stripe-promotions.mjs can only file it as an orphan.
 const SPOTLIGHT_URL = 'https://buy.stripe.com/5kQ4gz2qm6pXdmO6KYfYY04';
 
+// The monthly plan, $99 (pricing.json -> promote.featured.monthly_cents). Its
+// client_reference_id is the VENUE id, not an event id, because the whole
+// point is that it covers events which do not exist yet;
+// backend/sync-stripe-promotions.mjs tells the two apart by the session mode.
+const PLAN_URL = 'https://buy.stripe.com/7sYeVd1midSp3Me2uIfYY01';
+
+// Is this venue's city already sold for the coming week? Migration 020 refuses
+// a second overlapping slot, but a constraint can only say no AFTER the money
+// has moved -- so ask first and simply do not offer a week that is gone.
+let spotlightTaken = false;
+async function checkSpotlight(market) {
+  spotlightTaken = false;
+  if (!market) return;                       // outside every market we sell
+  const today = new Date().toISOString().slice(0, 10);
+  const weekEnd = new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10);
+  try {
+    // db() hands back the Response, not the rows -- every other caller in this
+    // file unwraps it, and forgetting to made this check silently answer
+    // "available" for a week that was gone.
+    const r = await db(`spotlight_slots?select=starts_on,ends_on`
+      + `&market=eq.${encodeURIComponent(market)}`
+      + `&starts_on=lt.${weekEnd}&ends_on=gt.${today}`);
+    if (!r.ok) return;
+    const rows = await r.json();
+    spotlightTaken = Array.isArray(rows) && rows.length > 0;
+  } catch { /* availability unknown: fall through and let the constraint decide */ }
+}
+
 // Stripe's own portal: invoices, card changes, cancelling. Email-link login,
 // so there is no second password to remember.
 const BILLING_URL = 'https://billing.stripe.com/p/login/14A14nfd87u1ciKd9mfYY00';
+
+/** The monthly plan is bought against the venue, so it can cover future events. */
+function planLink(email) {
+  const q = new URLSearchParams({ client_reference_id: venue?.id ?? '' });
+  if (email) q.set('prefilled_email', email);
+  return `${PLAN_URL}?${q}`;
+}
 
 function promoteLink(eventId, email, base = PROMOTE_URL) {
   const q = new URLSearchParams({ client_reference_id: eventId });
@@ -202,7 +237,7 @@ const store = {
 };
 
 let session = null;   // { access_token, refresh_token, email }
-let venue = null;     // { id, name, address }
+let venue = null;     // { id, name, address, market }
 let claim = null;     // this user's claim on `venue`, if any
 
 // ---------------------------------------------------------------- auth
@@ -286,7 +321,7 @@ async function searchVenues(q) {
   const now = new Date().toISOString();
 
   const [venueRes, eventRes] = await Promise.all([
-    db(`venues?select=id,name,address&or=(name.ilike.${term},address.ilike.${term})`
+    db(`venues?select=id,name,address,market&or=(name.ilike.${term},address.ilike.${term})`
        + '&order=name&limit=12'),
     db(`events?select=title,venue_id&title=ilike.${term}&venue_id=not.is.null`
        + `&status=eq.active&start_at=gte.${now}&limit=25`),
@@ -304,7 +339,7 @@ async function searchVenues(q) {
   const extraIds = [...viaEvent.keys()].filter((id) => !already.has(id)).slice(0, 8);
   let viaEvents = [];
   if (extraIds.length) {
-    const r = await db(`venues?select=id,name,address&id=in.(${extraIds.join(',')})`);
+    const r = await db(`venues?select=id,name,address,market&id=in.(${extraIds.join(',')})`);
     if (r.ok) viaEvents = await r.json();
   }
 
@@ -333,7 +368,7 @@ function renderHits(rows) {
     }
     b.onclick = () => {
       // `via` is about this search, not about the venue -- do not remember it.
-      venue = { id: v.id, name: v.name, address: v.address };
+      venue = { id: v.id, name: v.name, address: v.address, market: v.market ?? null };
       store.set(VENUE_KEY, venue);
       openDash();
     };
@@ -355,6 +390,10 @@ async function openDash() {
   $('hhead').textContent = venue.name;
   $('hsub').textContent = venue.address || '';
   say('m-dash', '', '');
+
+  // Availability before the rows are drawn, so a sold-out week is never
+  // rendered as a buyable button even for a moment.
+  await checkSpotlight(venue.market);
 
   const now = new Date().toISOString();
   const [evR, mineR, claimR] = await Promise.all([
@@ -382,8 +421,10 @@ async function openDash() {
       // would be the worse deal and suggesting it would be a sales pitch
       // rather than advice.
       + (events.length >= 4
-        ? `<br><span style="opacity:.75;font-size:14px">Running this many?`
-          + ` Email support@getonthetown.com and we'll work out one price for the lot.</span>`
+        ? `<br><span style="opacity:.75;font-size:14px">Featuring ${events.length} of these singly`
+          + ` is $${events.length * 25}. The <a href="${planLink(session?.email)}" target="_blank"`
+          + ` rel="noopener" style="color:#FFC9C2">monthly plan is $99</a> and covers every event`
+          + ` you run, including the ones we pick up next week.</span>`
         : '')
     : 'We have no upcoming events listed for this venue yet.';
 
@@ -607,10 +648,14 @@ function row(e, hasImage, submitted) {
     // Both tiers are bought here rather than from the pricing table, because
     // this is the only place that knows WHICH event is being promoted. A bare
     // payment link carries no event id and the money arrives unattached.
-    for (const t of [
-      { label: 'Feature it &middot; $25', base: PROMOTE_URL },
-      { label: 'Spotlight &middot; $149', base: SPOTLIGHT_URL },
-    ]) {
+    const tiers = [{ label: 'Feature it &middot; $25', base: PROMOTE_URL }];
+    // Spotlight is one venue per market per week. Offer it only where there is
+    // a market to top and the week is still free -- selling it twice and
+    // refunding the loser is a bad way to meet a venue.
+    if (venue?.market && !spotlightTaken) {
+      tiers.push({ label: 'Spotlight &middot; $149', base: SPOTLIGHT_URL });
+    }
+    for (const t of tiers) {
       const buy = document.createElement('a');
       buy.className = 'pill promote';
       buy.innerHTML = t.label;
@@ -618,6 +663,14 @@ function row(e, hasImage, submitted) {
       buy.target = '_blank';
       buy.rel = 'noopener';
       act.append(buy);
+    }
+    if (venue?.market && spotlightTaken) {
+      const gone = document.createElement('span');
+      gone.className = 'pill';
+      gone.style.cssText = 'opacity:.55;border:1px dashed currentColor';
+      gone.textContent = 'Spotlight taken this week';
+      gone.title = `Someone else has ${venue.market} this week. One venue per city per week.`;
+      act.append(gone);
     }
   }
 
